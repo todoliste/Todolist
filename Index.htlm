@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <meta name="theme-color" content="#4caf50">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Ma ToDo List">
+  <title>Ma ToDo List</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      padding: 20px;
+      background-color: #f0f0f5;
+      margin: 0;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      color: #2e7d32;
+      margin-bottom: 16px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 14px;
+      font-size: 1.1rem;
+      margin-bottom: 14px;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: white;
+      background-color: #4caf50;
+      border: none;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      cursor: pointer;
+    }
+    #actions {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    #actions button {
+      flex: 1;
+      font-size: 1rem;
+      padding: 12px;
+    }
+    #actions .decocher {
+      background-color: #f44336;
+    }
+    #counter {
+      text-align: center;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    li {
+      background: white;
+      padding: 12px;
+      margin-bottom: 12px;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid #ccc;
+    }
+    .task-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+    }
+    .task-text {
+      font-size: 1.05rem;
+      flex: 1;
+    }
+    .task-text.done {
+      text-decoration: line-through;
+      color: gray;
+    }
+    .btns {
+      display: flex;
+      gap: 5px;
+    }
+    .edit, .delete {
+      border: none;
+      color: white;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1.1rem;
+    }
+    .edit { background-color: orange; }
+    .delete { background-color: red; }
+    input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      accent-color: #4caf50;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📝 Ma ToDo List</h1>
+
+  <input type="text" id="taskInput" placeholder="Ajouter une tâche...">
+  <button onclick="addTask()">Ajouter</button>
+
+  <div id="actions">
+    <button onclick="checkAll()">Tout cocher</button>
+    <button class="decocher" onclick="uncheckAll()">Tout décocher</button>
+  </div>
+
+  <div id="counter">0 / 0 tâches faites</div>
+
+  <ul id="taskList"></ul>
+
+  <script>
+    let tasks = [];
+
+    function saveTasks() {
+      localStorage.setItem("myTasks", JSON.stringify(tasks));
+    }
+
+    function renderTasks() {
+      const list = document.getElementById("taskList");
+      list.innerHTML = "";
+      let done = 0;
+
+      tasks.forEach((task, index) => {
+        if (task.done) done++;
+
+        const li = document.createElement("li");
+
+        const left = document.createElement("div");
+        left.className = "task-left";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = task.done;
+        checkbox.onclick = () => {
+          task.done = checkbox.checked;
+          saveTasks();
+          renderTasks();
+        };
+
+        const span = document.createElement("span");
+        span.className = "task-text" + (task.done ? " done" : "");
+        span.textContent = task.text;
+
+        left.appendChild(checkbox);
+        left.appendChild(span);
+
+        const btns = document.createElement("div");
+        btns.className = "btns";
+
+        const editBtn = document.createElement("button");
+        editBtn.textContent = "✏️";
+        editBtn.className = "edit";
+        editBtn.onclick = () => {
+          const newText = prompt("Modifier la tâche :", task.text);
+          if (newText !== null && newText.trim() !== "") {
+            task.text = newText.trim();
+            saveTasks();
+            renderTasks();
+          }
+        };
+
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "🗑️";
+        delBtn.className = "delete";
+        delBtn.onclick = () => {
+          tasks.splice(index, 1);
+          saveTasks();
+          renderTasks();
+        };
+
+        btns.appendChild(editBtn);
+        btns.appendChild(delBtn);
+
+        li.appendChild(left);
+        li.appendChild(btns);
+        list.appendChild(li);
+      });
+
+      document.getElementById("counter").textContent = `${done} / ${tasks.length} tâches faites`;
+    }
+
+    function addTask() {
+      const input = document.getElementById("taskInput");
+      const text = input.value.trim();
+      if (text !== "") {
+        tasks.push({ text: text, done: false });
+        input.value = "";
+        saveTasks();
+        renderTasks();
+      }
+    }
+
+    function checkAll() {
+      tasks.forEach(t => t.done = true);
+      saveTasks();
+      renderTasks();
+    }
+
+    function uncheckAll() {
+      tasks.forEach(t => t.done = false);
+      saveTasks();
+      renderTasks();
+    }
+
+    window.onload = () => {
+      const saved = localStorage.getItem("myTasks");
+      if (saved) tasks = JSON.parse(saved);
+      renderTasks();
+    };
+  </script>
+
+</body>
+</html>
